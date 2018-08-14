@@ -1,8 +1,6 @@
 """Generating CloudFormation template."""
 from ipaddress import ip_network
-
 from ipify import get_ip
-
 from troposphere import (
     Base64,
     ec2,
@@ -57,7 +55,7 @@ ud = Base64(Join('\n', [
 
 t.add_resource(ec2.Instance(
     "instance",
-    ImageId="ami-a4c7edb2",
+    ImageId="ami-ebc47185",
     InstanceType="t2.micro",
     SecurityGroups=[Ref("SecurityGroup")],
     KeyName=Ref("KeyPair"),
