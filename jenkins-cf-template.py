@@ -26,7 +26,7 @@ from awacs.aws import (
   Statement,
 )
 
-from awacs import AssumRole
+from awacs.sts import AssumeRole
 
 ApplicationName = "jenkins"
 ApplicationPort = "8080"
@@ -77,11 +77,13 @@ ud = Base64(Join('\n', [
 
 t.add_resource(Role(
   "Role",
-  AssumRolePolicyDocument=Policy(
+  AssumeRolePolicyDocument=Policy(
     Statement=[
-      Effect=Allow,
-      Action=[AssumRole],
-      Principal=Principal("Service", ["ec2.amazonaws.com"])
+      Statement(
+        Effect=Allow,
+        Action=[AssumeRole],
+        Principal=Principal("Service", ["ec2.amazonaws.com"])
+      )
     ]
   )
 ))
