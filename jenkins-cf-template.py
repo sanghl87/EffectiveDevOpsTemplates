@@ -1,6 +1,8 @@
 """Generating CloudFormation template."""
 from ipaddress import ip_network
+
 from ipify import get_ip
+
 from troposphere import (
     Base64,
     ec2,
@@ -13,28 +15,35 @@ from troposphere import (
 )
 
 from troposphere.iam import (
-  InstanceProfile,
-  PolicyType as IAMPolicy,
-  Role,
+    InstanceProfile,
+    PolicyType as IAMPolicy,
+    Role,
 )
 
 from awacs.aws import (
-  Action,
-  Allow,
-  Policy,
-  Principal,
-  Statement,
+    Action,
+    Allow,
+    Policy,
+    Principal,
+    Statement,
 )
 
 from awacs.sts import AssumeRole
 
 ApplicationName = "jenkins"
 ApplicationPort = "8080"
-GithubAccount = "sanghl87"
+
+GithubAccount = "EffectiveDevOpsWithAWS"
 GithubAnsibleURL = "https://github.com/{}/ansible".format(GithubAccount)
+
+AnsiblePullCmd = \
+    "/usr/local/bin/ansible-pull -U {} {}.yml -i localhost".format(
+        GithubAnsibleURL,
+        ApplicationName
+    )
+
 PublicCidrIp = str(ip_network(get_ip()))
 
-AnsiblePullCmd = "/usr/local/bin/ansible-pull -U {} {}.yml -i localhost".format(GithubAnsibleURL, ApplicationName)
 t = Template()
 
 t.add_description("Effective DevOps in AWS: HelloWorld web application")
@@ -67,44 +76,44 @@ t.add_resource(ec2.SecurityGroup(
 
 ud = Base64(Join('\n', [
     "#!/bin/bash",
-    "yum remove java-1.7.0-openjdk -y",
-    "yum install java-1.8.0-openjdk -y",
     "yum install --enablerepo=epel -y git",
     "pip install ansible",
     AnsiblePullCmd,
-    "echo '*/10 * * * * root {}' > /etc/cron.d/ansible-pull".format(AnsiblePullCmd)
+    "echo '*/10 * * * * {}' > /etc/cron.d/ansible-pull".format(AnsiblePullCmd)
 ]))
 
 t.add_resource(Role(
-  "Role",
-  AssumeRolePolicyDocument=Policy(
-    Statement=[
-      Statement(
-        Effect=Allow,
-        Action=[AssumeRole],
-        Principal=Principal("Service", ["ec2.amazonaws.com"])
-      )
-    ]
-  )
+    "Role",
+    AssumeRolePolicyDocument=Policy(
+        Statement=[
+            Statement(
+                Effect=Allow,
+                Action=[AssumeRole],
+                Principal=Principal("Service", ["ec2.amazonaws.com"])
+            )
+        ]
+    )
+))
+
+t.add_resource(IAMPolicy(
+    "Policy",
+    PolicyName="AllowCodePipeline",
+    PolicyDocument=Policy(
+        Statement=[
+            Statement(
+                Effect=Allow,
+                Action=[Action("codepipeline", "*")],
+                Resource=["*"]
+            )
+        ]
+    ),
+    Roles=[Ref("Role")]
 ))
 
 t.add_resource(InstanceProfile(
-  "InstanceProfile",
-  Path="/",
-  Roles=[Ref("Role")]
-))
-
-t.add_resource(IAMPolicy("Policy",
-  PolicyName="AllowCodePipeline",
-  PolicyDocument=Policy(
-    Statement=[
-      Statement(Effect=Allow,
-        Action=[Action("codepipeline", "*")],
-        Resource=["*"]
-      )
-    ]
-  ),
-  Roles=[Ref("Role")]
+    "InstanceProfile",
+    Path="/",
+    Roles=[Ref("Role")]
 ))
 
 t.add_resource(ec2.Instance(

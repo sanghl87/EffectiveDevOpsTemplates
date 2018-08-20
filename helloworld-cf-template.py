@@ -1,6 +1,8 @@
 """Generating CloudFormation template."""
 from ipaddress import ip_network
+
 from ipify import get_ip
+
 from troposphere import (
     Base64,
     ec2,
