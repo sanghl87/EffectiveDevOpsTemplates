@@ -94,9 +94,6 @@ t.add_parameter(Parameter(
     Default='t2.micro',
     AllowedValues=[
         't2.micro',
-        't2.small',
-        't2.medium',
-        't2.large',
     ],
     ConstraintDescription='must be a valid EC2 T2 instance type.',
 ))
